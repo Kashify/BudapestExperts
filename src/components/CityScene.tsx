@@ -8,6 +8,7 @@ type CitySceneProps = {
   activeDistrict: string;
   reducedMotion: boolean;
   scrollProgress: number;
+  theme?: "light" | "dark";
 };
 
 const buildings = [
@@ -72,7 +73,7 @@ const districtOffsets: Record<string, [number, number, number]> = {
   "XIV. Zugló": [1.35, 0, 1.05],
 };
 
-function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress }: CitySceneProps) {
+function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress, theme }: CitySceneProps) {
   const city = useRef<Group>(null);
   const beacon = useRef<Group>(null);
   const beaconLight = useRef<PointLight>(null);
@@ -93,6 +94,12 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
   const activeColor = serviceColors[activeService] ?? serviceColors["Interior designer"];
   const beaconColor = useMemo(() => new Color(activeColor), [activeColor]);
 
+  const isDark = theme === "dark";
+  const platformColor = isDark ? "#141e2b" : "#e6e9ee";
+  const riverColor = isDark ? "#0d5cb5" : "#1c83e5";
+  const bridgeColor = isDark ? "#28394a" : "#fbfbfc";
+  const bridgePillarColor = isDark ? "#1f2a36" : "#9ea7b3";
+
   useFrame((state, delta) => {
     if (!city.current) return;
     if (reducedMotion) {
@@ -101,7 +108,6 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
       beaconLight.current?.position.copy(targetPin);
       return;
     }
-    city.current.rotation.y += delta * 0.055;
     city.current.rotation.x = -0.12 + scrollProgress * 0.08;
     city.current.position.y = Math.sin(state.clock.elapsedTime * 0.55) * 0.06 - 0.25 - scrollProgress * 0.18;
     if (!beaconInitialized.current) {
@@ -123,24 +129,24 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
   return (
     <group ref={city} rotation={[-0.12, -0.48, -0.03]} position={[0, -0.25, 0]}>
       <RoundedBox args={[8.7, 0.35, 4.8]} radius={0.28} smoothness={4} position={[0, -0.24, 0]}>
-        <meshStandardMaterial color="#e6e9ee" roughness={0.4} metalness={0.18} />
+        <meshStandardMaterial color={platformColor} roughness={isDark ? 0.5 : 0.4} metalness={isDark ? 0.25 : 0.18} />
       </RoundedBox>
 
       <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[1.24, 4.45]} />
-        <meshStandardMaterial color="#1c83e5" roughness={0.24} metalness={0.16} />
+        <meshStandardMaterial color={riverColor} roughness={0.24} metalness={0.16} />
       </mesh>
 
       {[-1.1, 0, 1.1].map((z) => (
         <group key={z} position={[0, 0.23, z]}>
           <mesh>
             <boxGeometry args={[1.4, 0.1, 0.18]} />
-            <meshStandardMaterial color="#fbfbfc" metalness={0.65} roughness={0.26} />
+            <meshStandardMaterial color={bridgeColor} metalness={isDark ? 0.3 : 0.65} roughness={0.3} />
           </mesh>
           {[-0.55, 0.55].map((x) => (
             <mesh key={x} position={[x, -0.12, 0]}>
               <boxGeometry args={[0.08, 0.28, 0.08]} />
-              <meshStandardMaterial color="#9ea7b3" metalness={0.55} />
+              <meshStandardMaterial color={bridgePillarColor} metalness={isDark ? 0.2 : 0.55} />
             </mesh>
           ))}
         </group>
@@ -209,7 +215,8 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
   );
 }
 
-export default function CityScene({ activeService, activeDistrict, reducedMotion, scrollProgress }: CitySceneProps) {
+export default function CityScene({ activeService, activeDistrict, reducedMotion, scrollProgress, theme }: CitySceneProps) {
+  const isDark = theme === "dark";
   return (
     <Canvas
       camera={{ position: [8.2, 6.5, 8.8], fov: 38 }}
@@ -217,11 +224,11 @@ export default function CityScene({ activeService, activeDistrict, reducedMotion
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       aria-label={`Interactive miniature Budapest showing ${activeService}`}
     >
-      <ambientLight intensity={1.7} />
-      <directionalLight position={[3, 8, 6]} intensity={3.4} color="#ffffff" />
-      <directionalLight position={[-5, 2, -2]} intensity={1.2} color="#91c5ff" />
+      <ambientLight intensity={isDark ? 1.0 : 1.7} />
+      <directionalLight position={[3, 8, 6]} intensity={isDark ? 2.0 : 3.4} color={isDark ? "#d4e6ff" : "#ffffff"} />
+      <directionalLight position={[-5, 2, -2]} intensity={isDark ? 0.8 : 1.2} color={isDark ? "#4878a8" : "#91c5ff"} />
       <Suspense fallback={null}>
-        <MiniCity activeService={activeService} activeDistrict={activeDistrict} reducedMotion={reducedMotion} scrollProgress={scrollProgress} />
+        <MiniCity activeService={activeService} activeDistrict={activeDistrict} reducedMotion={reducedMotion} scrollProgress={scrollProgress} theme={theme} />
       </Suspense>
       <OrbitControls
         enablePan={false}
