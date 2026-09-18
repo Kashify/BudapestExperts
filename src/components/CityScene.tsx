@@ -45,6 +45,8 @@ const serviceBuildingIndexes: Record<string, number> = {
   "Real Estate Lawyer": 12,
 };
 
+const buildingHeights = [1.5, 2.2, 1.2, 2.7, 1.7, 1.4, 2.1, 1.4, 2.3, 1.1, 2.8, 1.65, 2.1, 1.7, 2.5, 1.3];
+
 const serviceColors: Record<string, string> = {
   "Interior designer": "#e45436",
   "Housing Broker": "#2e9b68",
@@ -79,10 +81,11 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
     basePin[1],
     Math.max(-1.65, Math.min(1.65, basePin[2] + districtOffset[2])),
   ];
-  const [targetX, targetY, targetZ] = pin;
-  const targetPin = useMemo(() => new Vector3(targetX, targetY, targetZ), [targetX, targetY, targetZ]);
-  const activeColor = serviceColors[activeService] ?? serviceColors["Interior designer"];
   const activeBuilding = serviceBuildingIndexes[activeService] ?? serviceBuildingIndexes["Interior designer"];
+  const [targetX, targetY, targetZ] = pin;
+  const visibleTargetY = Math.max(targetY, buildingHeights[activeBuilding] + 0.72);
+  const targetPin = useMemo(() => new Vector3(targetX, visibleTargetY, targetZ), [targetX, visibleTargetY, targetZ]);
+  const activeColor = serviceColors[activeService] ?? serviceColors["Interior designer"];
   const beaconColor = useMemo(() => new Color(activeColor), [activeColor]);
 
   useFrame((state, delta) => {
@@ -100,7 +103,7 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
       animatedPin.current.copy(targetPin);
       beaconInitialized.current = true;
     } else {
-      animatedPin.current.lerp(targetPin, 1 - Math.pow(0.0005, delta));
+      animatedPin.current.lerp(targetPin, 1 - Math.pow(0.06, delta));
     }
     if (beacon.current) {
       beacon.current.position.copy(animatedPin.current);
@@ -156,22 +159,22 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
         </RoundedBox>
       ))}
 
-      <group ref={destinationMarker} position={[targetPin.x, 0.04, targetPin.z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <group ref={destinationMarker} position={[targetPin.x, 0.12, targetPin.z]} rotation={[-Math.PI / 2, 0, 0]}>
         <mesh>
-          <ringGeometry args={[0.3, 0.39, 32]} />
-          <meshBasicMaterial color={activeColor} transparent opacity={0.75} />
+          <ringGeometry args={[0.42, 0.55, 32]} />
+          <meshBasicMaterial color={activeColor} transparent opacity={0.95} />
         </mesh>
       </group>
       <pointLight ref={beaconLight} position={animatedPin.current} color={activeColor} intensity={2.2} distance={3.2} />
       <Float speed={reducedMotion ? 0 : 2.2} rotationIntensity={0} floatIntensity={0.25}>
         <group ref={beacon}>
           <mesh>
-            <sphereGeometry args={[0.2, 32, 32]} />
-            <meshStandardMaterial color={activeColor} emissive={activeColor} emissiveIntensity={0.35} />
+            <sphereGeometry args={[0.28, 32, 32]} />
+            <meshStandardMaterial color={activeColor} emissive={activeColor} emissiveIntensity={0.7} />
           </mesh>
           <mesh position={[0, -0.48, 0]}>
-            <cylinderGeometry args={[0.025, 0.025, 0.72, 12]} />
-            <meshStandardMaterial color={activeColor} />
+            <cylinderGeometry args={[0.045, 0.045, 1.2, 12]} />
+            <meshStandardMaterial color={activeColor} emissive={activeColor} emissiveIntensity={0.3} />
           </mesh>
           <Html center position={[0, 0.58, 0]} distanceFactor={7.8} style={{ pointerEvents: "none" }}>
             <span className="scene-label">{activeService}</span>
