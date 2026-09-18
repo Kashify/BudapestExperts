@@ -1,7 +1,7 @@
 import { Float, Html, OrbitControls, RoundedBox } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Suspense, useMemo, useRef } from "react";
-import { Color, Group, Vector3 } from "three";
+import { Color, Group, PointLight, Vector3 } from "three";
 
 type CitySceneProps = {
   activeService: string;
@@ -68,6 +68,9 @@ const districtOffsets: Record<string, [number, number, number]> = {
 function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress }: CitySceneProps) {
   const city = useRef<Group>(null);
   const beacon = useRef<Group>(null);
+  const beaconLight = useRef<PointLight>(null);
+  const destinationMarker = useRef<Group>(null);
+  const beaconInitialized = useRef(false);
   const animatedPin = useRef(new Vector3());
   const basePin = servicePins[activeService] ?? servicePins["Interior designer"];
   const districtOffset = districtOffsets[activeDistrict] ?? districtOffsets["All Budapest"];
@@ -83,12 +86,28 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
   const beaconColor = useMemo(() => new Color(activeColor), [activeColor]);
 
   useFrame((state, delta) => {
-    if (!city.current || reducedMotion) return;
+    if (!city.current) return;
+    if (reducedMotion) {
+      animatedPin.current.copy(targetPin);
+      beacon.current?.position.copy(targetPin);
+      beaconLight.current?.position.copy(targetPin);
+      return;
+    }
     city.current.rotation.y += delta * 0.055;
     city.current.rotation.x = -0.12 + scrollProgress * 0.08;
     city.current.position.y = Math.sin(state.clock.elapsedTime * 0.55) * 0.06 - 0.25 - scrollProgress * 0.18;
-    animatedPin.current.lerp(targetPin, 1 - Math.pow(0.0005, delta));
-    if (beacon.current) beacon.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 4) * 0.08);
+    if (!beaconInitialized.current) {
+      animatedPin.current.copy(targetPin);
+      beaconInitialized.current = true;
+    } else {
+      animatedPin.current.lerp(targetPin, 1 - Math.pow(0.0005, delta));
+    }
+    if (beacon.current) {
+      beacon.current.position.copy(animatedPin.current);
+      beacon.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 4) * 0.08);
+    }
+    if (beaconLight.current) beaconLight.current.position.copy(animatedPin.current);
+    if (destinationMarker.current) destinationMarker.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 3.2) * 0.12);
   });
 
   if (reducedMotion) animatedPin.current.copy(targetPin);
@@ -137,9 +156,15 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
         </RoundedBox>
       ))}
 
-      <pointLight position={animatedPin.current} color={activeColor} intensity={1.8} distance={2.8} />
+      <group ref={destinationMarker} position={[targetPin.x, 0.04, targetPin.z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh>
+          <ringGeometry args={[0.3, 0.39, 32]} />
+          <meshBasicMaterial color={activeColor} transparent opacity={0.75} />
+        </mesh>
+      </group>
+      <pointLight ref={beaconLight} position={animatedPin.current} color={activeColor} intensity={2.2} distance={3.2} />
       <Float speed={reducedMotion ? 0 : 2.2} rotationIntensity={0} floatIntensity={0.25}>
-        <group ref={beacon} position={animatedPin.current}>
+        <group ref={beacon}>
           <mesh>
             <sphereGeometry args={[0.2, 32, 32]} />
             <meshStandardMaterial color={activeColor} emissive={activeColor} emissiveIntensity={0.35} />
