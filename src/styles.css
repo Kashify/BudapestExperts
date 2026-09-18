@@ -68,13 +68,11 @@ body.no-scroll {
 }
 
 [data-reveal].reveal-ready {
-  opacity: 0;
   transform: translateY(28px);
-  transition: opacity 650ms cubic-bezier(0.16, 1, 0.3, 1), transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-reveal].reveal-ready.is-visible {
-  opacity: 1;
   transform: translateY(0);
 }
 
@@ -1799,8 +1797,8 @@ footer {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    min-height: 100dvh;
-    padding: 104px 18px 24px;
+    min-height: auto;
+    padding: 92px 18px 8px;
   }
 
   .hero::before {
@@ -1856,8 +1854,8 @@ footer {
 
   .hero-visual {
     flex: 1;
-    min-height: 350px;
-    margin: -10px -18px -20px;
+    min-height: 300px;
+    margin: -4px -18px -4px;
   }
 
   .scene-note {
@@ -1885,11 +1883,20 @@ footer {
   .how-section,
   .expert-join,
   .negotiation-section {
-    padding: 90px 18px;
+    padding: 72px 18px;
   }
 
   .negotiation-heading {
     display: block;
+  }
+
+  .negotiation-heading h2 {
+    font-size: clamp(2.35rem, 11vw, 3.3rem);
+  }
+
+  .negotiation-heading p {
+    margin-top: 16px;
+    font-size: 14px;
   }
 
   .negotiation-orbit {
@@ -1923,15 +1930,18 @@ footer {
   }
 
   .thread-list::-webkit-scrollbar { display: none; }
-  .thread-item { flex: 0 0 248px; }
+  .thread-item { flex: 0 0 min(248px, calc(100vw - 62px)); min-height: 72px; }
   .thread-time { display: none; }
   .new-request-link { flex: 0 0 auto; }
-  .conversation-body { min-height: 330px; padding: 20px; }
-  .conversation-header { padding: 20px; }
+  .conversation-body { min-height: 280px; padding: 18px; }
+  .conversation-header { padding: 16px 18px; }
   .offer-panel { padding: 18px 20px 14px; }
   .message-composer { padding: 14px 20px 20px; }
   .request-summary { align-items: flex-start; flex-direction: column; gap: 7px; }
-  .message-row > div { max-width: 88%; }
+  .message-row > div { max-width: 90%; }
+  .message-row p { font-size: 12px; }
+  .offer-row { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .offer-row .button { width: 100%; }
 
   .section-heading {
     margin-bottom: 38px;
