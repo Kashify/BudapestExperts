@@ -4,13 +4,19 @@ import {
   ArrowUpRight,
   Buildings,
   CaretDown,
+  CaretRight,
   Check,
   CheckCircle,
+  Clock,
+  CurrencyCircleDollar,
+  Funnel,
+  Handshake,
   HouseLine,
   Key,
   List,
   MagnifyingGlass,
   MapPin,
+  PaperPlaneTilt,
   Scales,
   Translate,
   UserCircle,
@@ -117,6 +123,130 @@ const experts = [
   },
 ];
 
+const negotiations = [
+  {
+    id: "rental-review",
+    name: "Márk Daniels",
+    role: "Housing Broker",
+    request: "Rental agreement review · District V",
+    status: "Waiting for your reply",
+    time: "12 min ago",
+    accent: "orange",
+    initials: "MD",
+    messages: [
+      { from: "expert", text: "I can review the agreement and flag the clauses that need attention before you sign.", time: "10:42" },
+      { from: "you", text: "That sounds right. Could you also check the early termination section?", time: "10:47" },
+      { from: "expert", text: "Yes. I can include that in the review and walk you through the changes on a short call.", time: "10:49" },
+    ],
+    offer: { amount: "35,000", unit: "for the review", expires: "Valid for 48 hours" },
+  },
+  {
+    id: "interior-plan",
+    name: "Anna Kovács",
+    role: "Interior designer",
+    request: "Two-room apartment plan · XI. Újbuda",
+    status: "Offer received",
+    time: "Yesterday",
+    accent: "blue",
+    initials: "AK",
+    messages: [
+      { from: "expert", text: "I have looked at your brief. The light study will help us make the living room work harder.", time: "Yesterday" },
+      { from: "you", text: "I would like to keep the existing kitchen if possible.", time: "Yesterday" },
+    ],
+    offer: { amount: "72,000", unit: "for the first concept", expires: "Valid for 5 days" },
+  },
+  {
+    id: "translation",
+    name: "Dániel Nagy",
+    role: "Translator",
+    request: "Property documents · English to Hungarian",
+    status: "You sent a message",
+    time: "2 days ago",
+    accent: "violet",
+    initials: "DN",
+    messages: [
+      { from: "you", text: "I have three documents, around 18 pages in total. Is that within your usual turnaround?", time: "Mon" },
+      { from: "expert", text: "Yes, I can deliver the translation by Thursday afternoon.", time: "Mon" },
+    ],
+    offer: { amount: "48,000", unit: "for all documents", expires: "Awaiting confirmation" },
+  },
+];
+
+type NegotiationPortalProps = {
+  activeThread: string;
+  setActiveThread: (id: string) => void;
+  onNotice: (message: string) => void;
+};
+
+function NegotiationPortal({ activeThread, setActiveThread, onNotice }: NegotiationPortalProps) {
+  const thread = negotiations.find((item) => item.id === activeThread) ?? negotiations[0];
+  const [filter, setFilter] = useState("All conversations");
+  const [draft, setDraft] = useState("");
+  const [accepted, setAccepted] = useState(false);
+
+  const sendMessage = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!draft.trim()) return;
+    setDraft("");
+    onNotice("Message saved to this prototype conversation.");
+  };
+
+  return (
+    <section className="negotiation-section" id="negotiation">
+      <div className="negotiation-heading">
+        <div>
+          <span className="sample-label">Private workspace · prototype data</span>
+          <h2>Where a match becomes an agreement.</h2>
+          <p>Keep the request, conversation and offer together. Negotiate with context before you commit.</p>
+        </div>
+        <div className="negotiation-orbit" aria-hidden="true">
+          <span className="orbit-core"><Handshake size={28} weight="duotone" /></span>
+          <span className="orbit-node node-one"><UserCircle size={18} /></span>
+          <span className="orbit-node node-two"><CurrencyCircleDollar size={18} /></span>
+          <span className="orbit-node node-three"><CheckCircle size={18} /></span>
+        </div>
+      </div>
+
+      <div className="negotiation-shell">
+        <aside className="thread-list" aria-label="Negotiation conversations">
+          <div className="thread-list-top">
+            <div><strong>Conversations</strong><span>{negotiations.length} active</span></div>
+            <button type="button" aria-label="Filter conversations" onClick={() => setFilter(filter === "All conversations" ? "Offers received" : "All conversations")}><Funnel size={18} /></button>
+          </div>
+          <div className="thread-filter">{filter}<CaretDown size={14} /></div>
+          {negotiations.map((item) => (
+            <button className={`thread-item ${item.id === thread.id ? "is-active" : ""}`} type="button" key={item.id} onClick={() => { setActiveThread(item.id); setAccepted(false); }}>
+              <span className={`thread-avatar ${item.accent}`}>{item.initials}</span>
+              <span className="thread-summary"><strong>{item.name}</strong><small>{item.request}</small><span>{item.status}</span></span>
+              <span className="thread-time">{item.time}</span>
+            </button>
+          ))}
+          <button className="new-request-link" type="button" onClick={() => onNotice("Start a new request from the search above.")}><span>+</span> New request</button>
+        </aside>
+
+        <div className="conversation-panel">
+          <header className="conversation-header">
+            <div><span className={`thread-avatar ${thread.accent}`}>{thread.initials}</span><div><strong>{thread.name}</strong><small>{thread.role} · {thread.request}</small></div></div>
+            <button className="conversation-more" type="button" aria-label="Open conversation details"><CaretRight size={20} /></button>
+          </header>
+          <div className="conversation-body">
+            <div className="request-summary"><span><MapPin size={16} weight="fill" /> {thread.request}</span><span><Clock size={16} /> Updated {thread.time.toLowerCase()}</span></div>
+            <div className="message-stack">
+              {thread.messages.map((message, index) => <div className={`message-row ${message.from === "you" ? "from-you" : ""}`} key={`${thread.id}-${index}`}><div><p>{message.text}</p><small>{message.from === "you" ? "You" : thread.name} · {message.time}</small></div></div>)}
+            </div>
+          </div>
+          <div className="offer-panel">
+            <div className="offer-label"><span><CurrencyCircleDollar size={19} weight="duotone" /> Current proposal</span><small>{thread.offer.expires}</small></div>
+            <div className="offer-row"><div><strong>Ft {thread.offer.amount}</strong><span>{thread.offer.unit}</span></div>{accepted ? <span className="accepted-offer"><CheckCircle size={18} weight="fill" /> Accepted</span> : <button className="button button-blue" type="button" onClick={() => { setAccepted(true); onNotice("Proposal accepted in this prototype."); }}>Accept proposal <ArrowRight size={17} weight="bold" /></button>}</div>
+            <button className="counter-link" type="button" onClick={() => onNotice("Counter-offer mode is ready for backend integration.")}>Make a counter-offer <ArrowRight size={15} /></button>
+          </div>
+          <form className="message-composer" onSubmit={sendMessage}><input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Write a message about the work…" aria-label="Message expert" /><button type="submit" aria-label="Send message"><PaperPlaneTilt size={19} weight="fill" /></button></form>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
 
@@ -181,6 +311,7 @@ function App() {
   const [submitted, setSubmitted] = useState(false);
   const [searchTouched, setSearchTouched] = useState(false);
   const [notice, setNotice] = useState("");
+  const [activeThread, setActiveThread] = useState(negotiations[0].id);
   const resultsRef = useRef<HTMLElement>(null);
   const requestTriggerRef = useRef<HTMLElement | null>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -256,6 +387,7 @@ function App() {
         <nav className={menuOpen ? "nav-open" : ""} aria-label="Main navigation">
           <a href="#services" onClick={() => setMenuOpen(false)}>Services</a>
           <a href="#experts" onClick={() => setMenuOpen(false)}>Find an expert</a>
+          <a href="#negotiation" onClick={() => setMenuOpen(false)}>Negotiation desk</a>
           <a href="#how" onClick={() => setMenuOpen(false)}>How it works</a>
           <a href="#for-experts" onClick={() => setMenuOpen(false)}>For experts</a>
         </nav>
@@ -330,6 +462,8 @@ function App() {
           <div><CheckCircle size={20} weight="fill" /><span>Local coverage by Budapest district</span></div>
           <div><CheckCircle size={20} weight="fill" /><span>Request details before you commit</span></div>
         </section>
+
+        <NegotiationPortal activeThread={activeThread} setActiveThread={setActiveThread} onNotice={showNotice} />
 
         <section className="services-section" id="services">
           <div className="section-heading">
