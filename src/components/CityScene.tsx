@@ -52,8 +52,6 @@ const facadeColors = [
   "#b5c5cf", "#d8b18f", "#c4a38a", "#d7c8ae", "#b7c7c8", "#d39b78", "#cab6a3", "#b4c0ca",
 ];
 
-const roofColors = ["#5b6370", "#786a62", "#596d72", "#806157"];
-
 const serviceColors: Record<string, string> = {
   "Interior designer": "#e45436",
   "Housing Broker": "#2e9b68",
@@ -165,10 +163,6 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
             <mesh position={[x, h * 0.58, z - d / 2 - 0.006]}>
               <planeGeometry args={[Math.max(0.18, w * 0.42), Math.max(0.16, h * 0.22)]} />
               <meshStandardMaterial color="#718a9c" roughness={0.22} metalness={0.18} />
-            </mesh>
-            <mesh position={[x, h + 0.055, z]} rotation={[0, 0, Math.PI / 4]}>
-              <boxGeometry args={[w * 0.72, 0.11, d * 0.72]} />
-              <meshStandardMaterial color={roofColors[index % roofColors.length]} roughness={0.62} />
             </mesh>
           </group>
         );
