@@ -1,7 +1,7 @@
 import { Float, Html, OrbitControls, RoundedBox } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Suspense, useRef } from "react";
-import type { Group } from "three";
+import { Suspense, useMemo, useRef } from "react";
+import { Color, Group, Vector3 } from "three";
 
 type CitySceneProps = {
   activeService: string;
@@ -37,6 +37,22 @@ const servicePins: Record<string, [number, number, number]> = {
   "Real Estate Lawyer": [3.55, 1.75, 0.35],
 };
 
+const serviceBuildingIndexes: Record<string, number> = {
+  "Interior designer": 6,
+  "Housing Broker": 10,
+  "Mortgage Advisor": 14,
+  Translator: 4,
+  "Real Estate Lawyer": 12,
+};
+
+const serviceColors: Record<string, string> = {
+  "Interior designer": "#e45436",
+  "Housing Broker": "#2e9b68",
+  "Mortgage Advisor": "#d88436",
+  Translator: "#6559a8",
+  "Real Estate Lawyer": "#d14d62",
+};
+
 const districtOffsets: Record<string, [number, number, number]> = {
   "All Budapest": [0, 0, 0],
   "I. Castle District": [-0.8, 0, 0.65],
@@ -51,6 +67,8 @@ const districtOffsets: Record<string, [number, number, number]> = {
 
 function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress }: CitySceneProps) {
   const city = useRef<Group>(null);
+  const beacon = useRef<Group>(null);
+  const animatedPin = useRef(new Vector3());
   const basePin = servicePins[activeService] ?? servicePins["Interior designer"];
   const districtOffset = districtOffsets[activeDistrict] ?? districtOffsets["All Budapest"];
   const pin: [number, number, number] = [
@@ -58,13 +76,22 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
     basePin[1],
     Math.max(-1.65, Math.min(1.65, basePin[2] + districtOffset[2])),
   ];
+  const [targetX, targetY, targetZ] = pin;
+  const targetPin = useMemo(() => new Vector3(targetX, targetY, targetZ), [targetX, targetY, targetZ]);
+  const activeColor = serviceColors[activeService] ?? serviceColors["Interior designer"];
+  const activeBuilding = serviceBuildingIndexes[activeService] ?? serviceBuildingIndexes["Interior designer"];
+  const beaconColor = useMemo(() => new Color(activeColor), [activeColor]);
 
   useFrame((state, delta) => {
     if (!city.current || reducedMotion) return;
     city.current.rotation.y += delta * 0.055;
     city.current.rotation.x = -0.12 + scrollProgress * 0.08;
     city.current.position.y = Math.sin(state.clock.elapsedTime * 0.55) * 0.06 - 0.25 - scrollProgress * 0.18;
+    animatedPin.current.lerp(targetPin, 1 - Math.pow(0.0005, delta));
+    if (beacon.current) beacon.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 4) * 0.08);
   });
+
+  if (reducedMotion) animatedPin.current.copy(targetPin);
 
   return (
     <group ref={city} rotation={[-0.12, -0.48, -0.03]} position={[0, -0.25, 0]}>
@@ -102,21 +129,24 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
         >
           <meshStandardMaterial
             color={index % 4 === 0 ? "#cbd7e3" : "#f7f8fa"}
+            emissive={index === activeBuilding ? beaconColor : "#000000"}
+            emissiveIntensity={index === activeBuilding ? 0.45 : 0}
             roughness={0.34}
             metalness={0.12}
           />
         </RoundedBox>
       ))}
 
+      <pointLight position={animatedPin.current} color={activeColor} intensity={1.8} distance={2.8} />
       <Float speed={reducedMotion ? 0 : 2.2} rotationIntensity={0} floatIntensity={0.25}>
-        <group position={pin}>
+        <group ref={beacon} position={animatedPin.current}>
           <mesh>
             <sphereGeometry args={[0.2, 32, 32]} />
-            <meshStandardMaterial color="#e45436" emissive="#8c1f0b" emissiveIntensity={0.35} />
+            <meshStandardMaterial color={activeColor} emissive={activeColor} emissiveIntensity={0.35} />
           </mesh>
           <mesh position={[0, -0.48, 0]}>
             <cylinderGeometry args={[0.025, 0.025, 0.72, 12]} />
-            <meshStandardMaterial color="#e45436" />
+            <meshStandardMaterial color={activeColor} />
           </mesh>
           <Html center position={[0, 0.58, 0]} distanceFactor={7.8} style={{ pointerEvents: "none" }}>
             <span className="scene-label">{activeService}</span>
