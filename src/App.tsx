@@ -367,6 +367,17 @@ function App() {
   useRevealSections();
   const pageStyle = { "--scroll-progress": scrollProgress } as CSSProperties;
 
+  useEffect(() => {
+    if (reducedMotion || requestOpen) return;
+    const rotationTimer = window.setInterval(() => {
+      setService((currentService) => {
+        const currentIndex = services.findIndex((item) => item.name === currentService);
+        return services[(currentIndex + 1) % services.length].name;
+      });
+    }, 3600);
+    return () => window.clearInterval(rotationTimer);
+  }, [reducedMotion, requestOpen]);
+
   const visibleExpert = experts.find(
     (expert) => expert.role === service && (district === "All Budapest" || expert.district === "All Budapest" || expert.district === district),
   );
