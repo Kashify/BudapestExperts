@@ -374,7 +374,7 @@ function App() {
         const currentIndex = services.findIndex((item) => item.name === currentService);
         return services[(currentIndex + 1) % services.length].name;
       });
-    }, 3600);
+    }, 2600);
     return () => window.clearInterval(rotationTimer);
   }, [reducedMotion, requestOpen]);
 

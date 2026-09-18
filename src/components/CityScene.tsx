@@ -47,6 +47,13 @@ const serviceBuildingIndexes: Record<string, number> = {
 
 const buildingHeights = [1.5, 2.2, 1.2, 2.7, 1.7, 1.4, 2.1, 1.4, 2.3, 1.1, 2.8, 1.65, 2.1, 1.7, 2.5, 1.3];
 
+const facadeColors = [
+  "#c98262", "#d9b28c", "#bdc7cf", "#e7c99f", "#c9a4a0", "#aec2c1", "#d8c5a9", "#c69074",
+  "#b5c5cf", "#d8b18f", "#c4a38a", "#d7c8ae", "#b7c7c8", "#d39b78", "#cab6a3", "#b4c0ca",
+];
+
+const roofColors = ["#5b6370", "#786a62", "#596d72", "#806157"];
+
 const serviceColors: Record<string, string> = {
   "Interior designer": "#e45436",
   "Housing Broker": "#2e9b68",
@@ -141,23 +148,46 @@ function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress
         </group>
       ))}
 
-      {buildings.map(([x, z, w, h, d], index) => (
-        <RoundedBox
-          key={`${x}-${z}`}
-          args={[w, h, d]}
-          radius={0.1}
-          smoothness={3}
-          position={[x, h / 2, z]}
-        >
-          <meshStandardMaterial
-            color={index % 4 === 0 ? "#cbd7e3" : "#f7f8fa"}
-            emissive={index === activeBuilding ? beaconColor : "#000000"}
-            emissiveIntensity={index === activeBuilding ? 0.45 : 0}
-            roughness={0.34}
-            metalness={0.12}
-          />
-        </RoundedBox>
-      ))}
+      {buildings.map(([x, z, w, h, d], index) => {
+        const active = index === activeBuilding;
+        const facade = active ? beaconColor : new Color(facadeColors[index]);
+        return (
+          <group key={`${x}-${z}`}>
+            <RoundedBox args={[w, h, d]} radius={0.1} smoothness={3} position={[x, h / 2, z]}>
+              <meshStandardMaterial
+                color={facade}
+                emissive={active ? beaconColor : "#000000"}
+                emissiveIntensity={active ? 0.22 : 0}
+                roughness={0.38}
+                metalness={0.08}
+              />
+            </RoundedBox>
+            <mesh position={[x, h * 0.58, z - d / 2 - 0.006]}>
+              <planeGeometry args={[Math.max(0.18, w * 0.42), Math.max(0.16, h * 0.22)]} />
+              <meshStandardMaterial color="#718a9c" roughness={0.22} metalness={0.18} />
+            </mesh>
+            <mesh position={[x, h + 0.055, z]} rotation={[0, 0, Math.PI / 4]}>
+              <boxGeometry args={[w * 0.72, 0.11, d * 0.72]} />
+              <meshStandardMaterial color={roofColors[index % roofColors.length]} roughness={0.62} />
+            </mesh>
+          </group>
+        );
+      })}
+
+      <group position={[0.05, 0.18, -0.18]}>
+        <mesh position={[0, 0.47, 0]}>
+          <boxGeometry args={[1.15, 0.72, 0.72]} />
+          <meshStandardMaterial color="#d8c4a7" roughness={0.42} />
+        </mesh>
+        <mesh position={[0, 0.86, 0]}>
+          <sphereGeometry args={[0.52, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#b8956e" roughness={0.34} metalness={0.16} />
+        </mesh>
+        <mesh position={[0, 1.26, 0]}>
+          <coneGeometry args={[0.055, 0.38, 12]} />
+          <meshStandardMaterial color="#b47a42" roughness={0.3} metalness={0.6} />
+        </mesh>
+      </group>
 
       <group ref={destinationMarker} position={[targetPin.x, 0.12, targetPin.z]} rotation={[-Math.PI / 2, 0, 0]}>
         <mesh>
