@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -274,6 +274,52 @@ function useDesktopScene() {
   return desktop;
 }
 
+function useScrollMotion() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const update = () => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(maxScroll > 0 ? Math.min(1, Math.max(0, window.scrollY / maxScroll)) : 0);
+    };
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        update();
+      });
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", update);
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  return progress;
+}
+
+function useRevealSections() {
+  useEffect(() => {
+    const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+    sections.forEach((section) => section.classList.add("reveal-ready"));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8%" });
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+}
+
 const mobilePinPositions = [
   { top: "42%", left: "64%" },
   { top: "28%", left: "25%" },
@@ -317,6 +363,9 @@ function App() {
   const dialogRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const desktopScene = useDesktopScene();
+  const scrollProgress = useScrollMotion();
+  useRevealSections();
+  const pageStyle = { "--scroll-progress": scrollProgress } as CSSProperties;
 
   const visibleExpert = experts.find(
     (expert) => expert.role === service && (district === "All Budapest" || expert.district === "All Budapest" || expert.district === district),
@@ -408,7 +457,7 @@ function App() {
         </div>
       </header>
 
-      <main id="main">
+      <main id="main" style={pageStyle}>
         <section className="hero" id="top">
           <div className="hero-copy">
             <p className="location-line"><MapPin size={17} weight="fill" /> Local help across Budapest</p>
@@ -445,7 +494,7 @@ function App() {
             <div className="scene-orbit scene-orbit-two" />
             {desktopScene ? (
               <Suspense fallback={<div className="scene-loader">Building Budapest…</div>}>
-                <CityScene activeService={service} activeDistrict={district} reducedMotion={reducedMotion} />
+                <CityScene activeService={service} activeDistrict={district} reducedMotion={reducedMotion} scrollProgress={scrollProgress} />
               </Suspense>
             ) : (
               <MobileCity activeService={service} activeDistrict={district} />
@@ -457,15 +506,15 @@ function App() {
           </div>
         </section>
 
-        <section className="confidence-strip" aria-label="Marketplace principles">
+        <section className="confidence-strip" data-reveal aria-label="Marketplace principles">
           <div><CheckCircle size={20} weight="fill" /><span>Profiles designed for easy comparison</span></div>
           <div><CheckCircle size={20} weight="fill" /><span>Local coverage by Budapest district</span></div>
           <div><CheckCircle size={20} weight="fill" /><span>Request details before you commit</span></div>
         </section>
 
-        <NegotiationPortal activeThread={activeThread} setActiveThread={setActiveThread} onNotice={showNotice} />
+        <div data-reveal><NegotiationPortal activeThread={activeThread} setActiveThread={setActiveThread} onNotice={showNotice} /></div>
 
-        <section className="services-section" id="services">
+        <section className="services-section" id="services" data-reveal>
           <div className="section-heading">
             <h2>Whatever Budapest brings, find someone who knows.</h2>
             <p>Start with the situation, not a directory. Each route takes you to specialists with the right local context.</p>
@@ -497,7 +546,7 @@ function App() {
           </div>
         </section>
 
-        <section className="experts-section" id="experts" ref={resultsRef} tabIndex={-1} aria-live="polite">
+        <section className="experts-section" id="experts" data-reveal ref={resultsRef} tabIndex={-1} aria-live="polite">
           <div className="experts-intro">
             <div>
               <span className="sample-label">Sample marketplace preview</span>
@@ -513,7 +562,7 @@ function App() {
             {visibleExpert ? (
               <article className="expert-feature">
                 <div className="expert-photo">
-                  <img src={visibleExpert.image} alt={`Sample portrait for ${visibleExpert.name}`} />
+                  <img src={visibleExpert.image} loading="lazy" alt={`Sample portrait for ${visibleExpert.name}`} onError={(event) => { event.currentTarget.style.display = "none"; event.currentTarget.parentElement?.classList.add("image-fallback"); }} />
                   <span className={`profile-accent ${visibleExpert.color}`} />
                   <span className="sample-chip">Demo profile</span>
                 </div>
@@ -559,7 +608,7 @@ function App() {
           </div>
         </section>
 
-        <section className="how-section" id="how">
+        <section className="how-section" id="how" data-reveal>
           <div className="how-title">
             <h2>From “I need help”<br />to “it’s handled.”</h2>
           </div>
@@ -582,7 +631,7 @@ function App() {
           </div>
         </section>
 
-        <section className="request-section">
+        <section className="request-section" data-reveal>
           <div className="request-copy">
             <div className="request-mark"><UserCircle size={42} weight="duotone" /></div>
             <h2>Not sure which expert you need?</h2>
@@ -593,7 +642,7 @@ function App() {
           </button>
         </section>
 
-        <section className="expert-join" id="for-experts">
+        <section className="expert-join" id="for-experts" data-reveal>
           <div className="join-visual" aria-hidden="true">
             <div className="join-card join-card-back"><span>Mortgage advisor</span></div>
             <div className="join-card join-card-mid"><span>Translator</span></div>

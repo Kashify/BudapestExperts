@@ -7,6 +7,7 @@ type CitySceneProps = {
   activeService: string;
   activeDistrict: string;
   reducedMotion: boolean;
+  scrollProgress: number;
 };
 
 const buildings = [
@@ -48,7 +49,7 @@ const districtOffsets: Record<string, [number, number, number]> = {
   "XIV. Zugló": [1.35, 0, 1.05],
 };
 
-function MiniCity({ activeService, activeDistrict, reducedMotion }: CitySceneProps) {
+function MiniCity({ activeService, activeDistrict, reducedMotion, scrollProgress }: CitySceneProps) {
   const city = useRef<Group>(null);
   const basePin = servicePins[activeService] ?? servicePins["Interior designer"];
   const districtOffset = districtOffsets[activeDistrict] ?? districtOffsets["All Budapest"];
@@ -61,7 +62,8 @@ function MiniCity({ activeService, activeDistrict, reducedMotion }: CityScenePro
   useFrame((state, delta) => {
     if (!city.current || reducedMotion) return;
     city.current.rotation.y += delta * 0.055;
-    city.current.position.y = Math.sin(state.clock.elapsedTime * 0.55) * 0.06 - 0.25;
+    city.current.rotation.x = -0.12 + scrollProgress * 0.08;
+    city.current.position.y = Math.sin(state.clock.elapsedTime * 0.55) * 0.06 - 0.25 - scrollProgress * 0.18;
   });
 
   return (
@@ -125,7 +127,7 @@ function MiniCity({ activeService, activeDistrict, reducedMotion }: CityScenePro
   );
 }
 
-export default function CityScene({ activeService, activeDistrict, reducedMotion }: CitySceneProps) {
+export default function CityScene({ activeService, activeDistrict, reducedMotion, scrollProgress }: CitySceneProps) {
   return (
     <Canvas
       camera={{ position: [8.2, 6.5, 8.8], fov: 38 }}
@@ -137,7 +139,7 @@ export default function CityScene({ activeService, activeDistrict, reducedMotion
       <directionalLight position={[3, 8, 6]} intensity={3.4} color="#ffffff" />
       <directionalLight position={[-5, 2, -2]} intensity={1.2} color="#91c5ff" />
       <Suspense fallback={null}>
-        <MiniCity activeService={activeService} activeDistrict={activeDistrict} reducedMotion={reducedMotion} />
+        <MiniCity activeService={activeService} activeDistrict={activeDistrict} reducedMotion={reducedMotion} scrollProgress={scrollProgress} />
       </Suspense>
       <OrbitControls
         enablePan={false}
